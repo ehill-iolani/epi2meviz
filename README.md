@@ -17,4 +17,4 @@ docker pull ethill/epi2meviz:alpha
 docker run --name=epi2meviz --rm -d -p 3838:3838 ethill/epi2meviz:alpha
 ```
 
-Open a browser and nativate to http://localhost:8080/EPI2MEviz/ to use the application.
+Open a browser and nativate to http://localhost:3838/EPI2MEviz/ to use the application.
