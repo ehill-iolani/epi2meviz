@@ -17,7 +17,7 @@ docker pull ethill/epi2meviz:alpha
 docker run --name=epi2meviz --rm -d -p 3838:3838 ethill/epi2meviz:alpha
 ```
 
-Open a browser and nativate to http://localhost:3838/EPI2MEviz/ to use the application.
+Open a browser and nativate to http://localhost:3838/ to use the application.
 
 Alterantively, there is a dockerfile included in the repository which allows you to build the image yourself.
 Navigate to where you would store the github repository and then enter the following:
