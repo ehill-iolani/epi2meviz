@@ -263,14 +263,14 @@ server <- function(input, output, session) {
   # Display the rarefaction curve help
   observeEvent(input$rare_help, {
     showModal(modalDialog(
-      title = "Rarefaction Curve Help",
+      title = HTML("Rarefaction Curve Help",
       "Rarefaction curves are used to determine if enough reads have been
       sampled to capture the diversity of a sample. The x-axis represents the
       number of reads sampled and the y-axis represents the number of unique
       species found. If the curve plateaus, then enough reads have been sampled
       to capture the diversity of the sample. If the curve does not plateau,
       then more reads need to be sampled to capture the diversity of the
-      sample.",
+      sample."),
       easyClose = TRUE,
       footer = NULL
     ))
@@ -290,11 +290,11 @@ server <- function(input, output, session) {
   # Display the relative abundance plot help
   observeEvent(input$relab_help, {
     showModal(modalDialog(
-      title = "Relative Abundance Plot Help",
+      title = HTML("Relative Abundance Plot Help",
       "Relative abundance plots are used to visualize the relative abundance
       of each genus in each sample. The x-axis represents the sample ID and
       the y-axis represents the relative abundance of each genus. The legend
-      represents the genus of each species.",
+      represents the genus of each species."),
       easyClose = TRUE,
       footer = NULL
     ))
@@ -321,10 +321,10 @@ server <- function(input, output, session) {
   # Display the relative abundance table help
   observeEvent(input$relabf_help, {
     showModal(modalDialog(
-      title = "Relative Abundance Table Help",
+      title = HTML("Relative Abundance Table Help",
       "The relative abundance table is used to visualize the relative abundance
       of each genus in each sample. The table is sorted by barcode and then
-      relative abundance. The table can be downloaded as a .csv file.",
+      relative abundance. The table can be downloaded as a .csv file."),
       easyClose = TRUE,
       footer = NULL
     ))
@@ -375,11 +375,12 @@ server <- function(input, output, session) {
   # Display the Bray Curtis PCoA plot help
   observeEvent(input$braycurtis_help, {
     showModal(modalDialog(
-      title = "Bray Curtis PCoA Plot Help",
+      title = HTML("Bray Curtis PCoA Plot Help",
       "Bray Curtis PCoA plots are used to visualize the similarity between
       samples based on species present. The x-axis represents the first 
       principal coordinate and they-axis represents the second principal 
-      coordinate. The legend representsthe sample ID.",
+      coordinate. The legend representsthe sample ID. <br/> <br/>
+      This will not run if there are less than 3 barcodes."),
       easyClose = TRUE,
       footer = NULL
     ))
