@@ -108,8 +108,14 @@ server <- function(input, output, session) {
     # Stores the input file as a variable
     inFile <- input$file1
 
-    # Parses the input file
-    dat <- read.csv(inFile$datapath, header = TRUE, sep = input$sep)
+    # Parses the input file(s)
+    if (is.list(inFile) == TRUE) {
+      dat <- do.call(rbind, lapply(inFile$datapath, function(x) {
+                                   read.csv(x, header = TRUE,
+                                   sep = input$sep)}))
+    } else {
+      dat <- read.csv(inFile$datapath, header = TRUE, sep = input$sep)
+    }
 
     # Filters the data based on user input
     dat <- dat[dat$barcode %in% input$barcodes, ]
