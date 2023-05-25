@@ -4,6 +4,7 @@ library(stringr)
 library(dplyr)
 library(tidyr)
 library(vegan)
+library(shinycssloaders)
 
 # Accessory Function(s) -------------------------------------------------------
 bc_sample <- function(x, y) {
@@ -40,10 +41,10 @@ ui <- shinyUI(fluidPage(
                  textInput("filt", "Minimum EPI2ME Accuracy",
                            value = "80"),
                  checkboxGroupInput("barcodes", "Barcodes to Analyze",
-                           choices = bci, selected = "all")
+                           choices = bci, selected = "all"),
                ),
                mainPanel(
-                 tableOutput("contents")
+                 withSpinner(tableOutput("contents"))
                )
              )
     ),
@@ -51,7 +52,7 @@ ui <- shinyUI(fluidPage(
              fluidPage(
                headerPanel("Rarefaction Curves"),
                mainPanel(
-                 plotOutput("rarefaction")
+                 withSpinner(plotOutput("rarefaction"))
                )
              )
     ),
@@ -59,7 +60,17 @@ ui <- shinyUI(fluidPage(
              fluidPage(
                headerPanel("Relative Abundance"),
                mainPanel(
-                 plotOutput("relative_abundance")
+                 withSpinner(plotOutput("relative_abundance"))
+               )
+             )
+    ),
+    tabPanel("Relative Abundance Table",
+             fluidPage(
+               headerPanel("Relative Abundance Table"),
+               selectInput("relab_barcode", "Select Barcode",
+                           choices = bci),
+               mainPanel(
+                 withSpinner(tableOutput("relab"))
                )
              )
     ),
@@ -67,7 +78,7 @@ ui <- shinyUI(fluidPage(
              fluidPage(
                headerPanel("Bray Curtis PCoA"),
                mainPanel(
-                 plotOutput("bray_curtis")
+                 withSpinner(plotOutput("bray_curtis"))
                )
              )
   )
@@ -81,6 +92,8 @@ server <- function(input, output, session) {
   options(shiny.maxRequestSize = 70 * 1024^2)
 
   data <- eventReactive(input$button, {
+    # Filtering and cleaning the data -----------------------------------------
+
     # require that at least 1 input is available
     req(input$file1)
 
@@ -127,7 +140,7 @@ server <- function(input, output, session) {
       rnn <- 10
     }
 
-    # Rareify all barcodes
+    # Rareify all barcodes ----------------------------------------------------
     rare <- data.frame()
 
     for (i in bc) {
@@ -147,6 +160,8 @@ server <- function(input, output, session) {
     # Renames columns of processed data
     names(rare) <- c("unique_species", "reads_sampled", "barcode")
 
+  # Calculates Relative abundance ---------------------------------------------
+
     # Calculates relative abundance per barcode
     adat <- dat %>% group_by(genus, barcode) %>% tally()
     adat <- adat[adat$n > 5, ]
@@ -157,6 +172,14 @@ server <- function(input, output, session) {
       temp$rel_ab <- temp$n / sum(temp$n)
       relab <- rbind(relab, temp)
     }
+
+    # Cleans table for presentation
+    relabf <- data.frame(relab$genus, relab$barcode, relab$rel_ab)
+    names(relabf) <- c("Genus", "Barcode", "rel_ab")
+    relabf$rel_ab <- relabf$rel_ab * 100
+    names(relabf) <- c("Genus", "Barcode", "Relative Abundance (%)")
+
+  # Conducts Bray Curtis PCoA -------------------------------------------------
 
     # Bray Curtis PCoA
     if (length(bc) < 3) {
@@ -179,16 +202,22 @@ server <- function(input, output, session) {
       names(bray_curtis_pcoa_dat) <- c("PCoA_1", "PCoA_2", "Barcode")
     }
 
+  # Returns analysis outputs --------------------------------------------------
+
     # Returns processed data
     if (exists("bray_curtis_pcoa_dat") == FALSE) {
-      combo <- list(rdat = rdat, rare = rare, relab = relab)
+      combo <- list(rdat = rdat, rare = rare, relab = relab,
+                    relabf = relabf)
       return(combo)
     } else {
       combo <- list(rdat = rdat, rare = rare, relab = relab,
+                    relabf = relabf,
                     bray_curtis_pcoa_dat = bray_curtis_pcoa_dat)
       return(combo)
     }
   })
+
+  # Visualizing outputs --------------------------------------------------------
 
   # Display the table of processed data
   output$contents <- renderTable({
@@ -213,6 +242,11 @@ server <- function(input, output, session) {
     theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
     labs(x = "Sample ID", y = "Relative Abundance", fill = "Genus") +
     theme_bw()
+  })
+
+  # Display the relative abundance table
+  output$relab <- renderTable({
+    data()$relabf[data()$relabf$Barcode == input$relab_barcode, ]
   })
 
   # Display the Bray Curtis PCoA plot
