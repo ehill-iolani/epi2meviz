@@ -9,7 +9,16 @@ This app will take the .csv file downloaded from the EPI2ME analysis and will co
 
 You will need to upload the .csv file downloaded from the EPI2ME analysis, set an accuracy threshold based on the EPI2ME results, and select the relevant barcodes of interest.
 
-# Installation
+# Usage
+
+To use this app you must have access to the .csv file generated from the EPI2ME analysis and access to the EPI2ME dashboard for the analysis stats.
+Once you have access to both do the following:
+1) Upload the .csv to the app using the "Browse" button
+2) Set the "Average EPI2ME Accuracy" value to the average accuracy reported in the EPI2ME dashboard
+3) Select the barcodes in you sequencing runs from the checkboxes under "Barcodes to Analyze"
+4) Click the "submit" button
+
+# Local Installation
 
 Pull the Docker image from Dockerhub to run this pipeline as a container:
 ```

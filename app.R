@@ -38,7 +38,7 @@ ui <- shinyUI(fluidPage(
                  radioButtons("sep", "Separator",
                               c(Comma = ","),
                               ","),
-                 textInput("filt", "Minimum EPI2ME Accuracy",
+                 textInput("filt", "Average EPI2ME Accuracy",
                            value = "80"),
                  checkboxGroupInput("barcodes", "Barcodes to Analyze",
                            choices = bci, selected = "all"),
