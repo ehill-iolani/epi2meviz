@@ -18,6 +18,10 @@ Once you have access to both do the following:
 3) Select the barcodes in you sequencing runs from the checkboxes under "Barcodes to Analyze"
 4) Click the "submit" button
 
+Once the analysis completes, the tabs at the top of the page will show the plots/tables generated from the analysis.
+
+You can then download the .pdf of the plot of interest by clicking the "Download PDF" button in the upper right.
+
 # Local Installation
 
 Pull the Docker image from Dockerhub to run this pipeline as a container:

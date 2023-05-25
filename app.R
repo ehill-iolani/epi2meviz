@@ -51,6 +51,7 @@ ui <- shinyUI(fluidPage(
     tabPanel("Rarefaction Curve",
              fluidPage(
                headerPanel("Rarefaction Curves"),
+               downloadButton("rare_butt", "Download PDF"),
                mainPanel(
                  withSpinner(plotOutput("rarefaction"))
                )
@@ -59,6 +60,7 @@ ui <- shinyUI(fluidPage(
     tabPanel("Relative Abundance Plot",
              fluidPage(
                headerPanel("Relative Abundance"),
+               downloadButton("relab_butt", "Download PDF"),
                mainPanel(
                  withSpinner(plotOutput("relative_abundance"))
                )
@@ -77,6 +79,7 @@ ui <- shinyUI(fluidPage(
     tabPanel("Bray Curtis PCoA Plot",
              fluidPage(
                headerPanel("Bray Curtis PCoA"),
+               downloadButton("braycurtis_butt", "Download PDF"),
                mainPanel(
                  withSpinner(plotOutput("bray_curtis"))
                )
@@ -231,8 +234,26 @@ server <- function(input, output, session) {
                                      y = unique_species,
                                      color = barcode)) +
     geom_point(size = 2, aes(group = barcode)) +
-        theme_bw()
+    labs(x = "Reads Sampled", y = "Unique Species", fill = "Genus") +
+    theme_bw()
   })
+
+  # Download the rarefaction curve
+  output$rare_butt <- downloadHandler(
+    filename = function() {
+      paste("rarefaction", ".pdf", sep = "")
+    },
+    content = function(file) {
+      pdf(file)
+      print(ggplot(data = data()$rare, aes(x = reads_sampled,
+                                           y = unique_species,
+                                           color = barcode)) +
+      geom_point(size = 2, aes(group = barcode)) +
+      labs(x = "Reads Sampled", y = "Unique Species", fill = "Genus") +
+      theme_bw())
+      dev.off()
+    }
+  )
 
   # Display the relative abundance plot
   output$relative_abundance <- renderPlot({
@@ -244,6 +265,24 @@ server <- function(input, output, session) {
     labs(x = "Sample ID", y = "Relative Abundance", fill = "Genus") +
     theme_bw()
   })
+
+  # Download the relative abundance plot
+  output$relab_butt <- downloadHandler(
+    filename = function() {
+      paste("relative_abundance", ".pdf", sep = "")
+    },
+    content = function(file) {
+      pdf(file)
+      print(ggplot(data = data()$relab, aes(x = barcode,
+                                           y = rel_ab,
+                                           fill = genus)) +
+      geom_bar(stat = "identity") +
+      theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+      labs(x = "Sample ID", y = "Relative Abundance", fill = "Genus") +
+      theme_bw())
+      dev.off()
+    }
+  )
 
   # Display the relative abundance table
   output$relab <- renderTable({
@@ -259,6 +298,22 @@ server <- function(input, output, session) {
       geom_point(size = 4) +
       theme_bw()
     })
+
+  # Download the Bray Curtis PCoA plot
+  output$braycurtis_butt <- downloadHandler(
+    filename = function() {
+      paste("bray_curtis", ".pdf", sep = "")
+    },
+    content = function(file) {
+      pdf(file)
+      print(ggplot(data = data()$bray_curtis_pcoa_dat, aes(x = PCoA_1,
+                                                           y = PCoA_2,
+                                                           color = Barcode)) +
+      geom_point(size = 4) +
+      theme_bw())
+      dev.off()
+    }
+  )
 }
 
 # Run the app -----------------------------------------------------------------
