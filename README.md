@@ -28,4 +28,4 @@ docker build -t epi2meviz:local .
 docker run --name=epi2meviz --rm -d -p 3838:3838 epi2meviz:local
 ```
 
-Open a browser and nativate to http://localhost:3838 to use the application.
+Open a browser and nativate to http://localhost:3838/ to use the application.
