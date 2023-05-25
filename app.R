@@ -52,6 +52,7 @@ ui <- shinyUI(fluidPage(
              fluidPage(
                headerPanel("Rarefaction Curves"),
                downloadButton("rare_butt", "Download PDF"),
+               actionButton("rare_help", "Help"),
                mainPanel(
                  withSpinner(plotOutput("rarefaction"))
                )
@@ -61,6 +62,7 @@ ui <- shinyUI(fluidPage(
              fluidPage(
                headerPanel("Relative Abundance"),
                downloadButton("relab_butt", "Download PDF"),
+               actionButton("relab_help", "Help"),
                mainPanel(
                  withSpinner(plotOutput("relative_abundance"))
                )
@@ -71,6 +73,8 @@ ui <- shinyUI(fluidPage(
                headerPanel("Relative Abundance Table"),
                selectInput("relab_barcode", "Select Barcode",
                            choices = bci),
+               downloadButton("relabf_butt", "Download CSV"),
+               actionButton("relabf_help", "Help"),
                mainPanel(
                  withSpinner(tableOutput("relab"))
                )
@@ -80,6 +84,7 @@ ui <- shinyUI(fluidPage(
              fluidPage(
                headerPanel("Bray Curtis PCoA"),
                downloadButton("braycurtis_butt", "Download PDF"),
+               actionButton("braycurtis_help", "Help"),
                mainPanel(
                  withSpinner(plotOutput("bray_curtis"))
                )
@@ -221,7 +226,7 @@ server <- function(input, output, session) {
     }
   })
 
-  # Visualizing outputs --------------------------------------------------------
+  # Visualizing/Downloading outputs -------------------------------------------
 
   # Display the table of processed data
   output$contents <- renderTable({
@@ -255,6 +260,22 @@ server <- function(input, output, session) {
     }
   )
 
+  # Display the rarefaction curve help
+  observeEvent(input$rare_help, {
+    showModal(modalDialog(
+      title = "Rarefaction Curve Help",
+      "Rarefaction curves are used to determine if enough reads have been
+      sampled to capture the diversity of a sample. The x-axis represents the
+      number of reads sampled and the y-axis represents the number of unique
+      species found. If the curve plateaus, then enough reads have been sampled
+      to capture the diversity of the sample. If the curve does not plateau,
+      then more reads need to be sampled to capture the diversity of the
+      sample.",
+      easyClose = TRUE,
+      footer = NULL
+    ))
+  })
+
   # Display the relative abundance plot
   output$relative_abundance <- renderPlot({
     ggplot(data = data()$relab, aes(x = barcode,
@@ -264,6 +285,19 @@ server <- function(input, output, session) {
     theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
     labs(x = "Sample ID", y = "Relative Abundance", fill = "Genus") +
     theme_bw()
+  })
+
+  # Display the relative abundance plot help
+  observeEvent(input$relab_help, {
+    showModal(modalDialog(
+      title = "Relative Abundance Plot Help",
+      "Relative abundance plots are used to visualize the relative abundance
+      of each genus in each sample. The x-axis represents the sample ID and
+      the y-axis represents the relative abundance of each genus. The legend
+      represents the genus of each species.",
+      easyClose = TRUE,
+      footer = NULL
+    ))
   })
 
   # Download the relative abundance plot
@@ -284,10 +318,33 @@ server <- function(input, output, session) {
     }
   )
 
+  # Display the relative abundance table help
+  observeEvent(input$relabf_help, {
+    showModal(modalDialog(
+      title = "Relative Abundance Table Help",
+      "The relative abundance table is used to visualize the relative abundance
+      of each genus in each sample. The table is sorted by barcode and then
+      relative abundance. The table can be downloaded as a .csv file.",
+      easyClose = TRUE,
+      footer = NULL
+    ))
+  })
+
   # Display the relative abundance table
   output$relab <- renderTable({
     data()$relabf[data()$relabf$Barcode == input$relab_barcode, ]
   })
+
+  # Download the relative abundance table
+  output$relabf_butt <- downloadHandler(
+    filename = function() {
+      paste("relative_abundance", ".csv", sep = "")
+    },
+    content = function(file) {
+      write.csv(data()$relabf[data()$relabf$Barcode == input$relab_barcode, ],
+                file, row.names = FALSE)
+    }
+  )
 
   # Display the Bray Curtis PCoA plot
     output$bray_curtis <- renderPlot({
@@ -314,6 +371,19 @@ server <- function(input, output, session) {
       dev.off()
     }
   )
+
+  # Display the Bray Curtis PCoA plot help
+  observeEvent(input$braycurtis_help, {
+    showModal(modalDialog(
+      title = "Bray Curtis PCoA Plot Help",
+      "Bray Curtis PCoA plots are used to visualize the similarity between
+      samples based on species present. The x-axis represents the first 
+      principal coordinate and they-axis represents the second principal 
+      coordinate. The legend representsthe sample ID.",
+      easyClose = TRUE,
+      footer = NULL
+    ))
+  })
 }
 
 # Run the app -----------------------------------------------------------------
