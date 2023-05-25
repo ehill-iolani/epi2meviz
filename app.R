@@ -177,6 +177,7 @@ server <- function(input, output, session) {
     relabf <- data.frame(relab$genus, relab$barcode, relab$rel_ab)
     names(relabf) <- c("Genus", "Barcode", "rel_ab")
     relabf$rel_ab <- relabf$rel_ab * 100
+    relabf <- relabf[with(relabf, order(Barcode, rel_ab, decreasing = TRUE)), ]
     names(relabf) <- c("Genus", "Barcode", "Relative Abundance (%)")
 
   # Conducts Bray Curtis PCoA -------------------------------------------------
