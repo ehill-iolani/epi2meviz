@@ -1,6 +1,6 @@
 # EPI2MEVIZ
 
-A R based shiny app that is intendted to be used as a companion analysis to the 16S EPI2ME workflow from Oxford Nanopore Technologies.
+A R based shiny app that is intended to be used as a companion analysis to the 16S EPI2ME workflow from Oxford Nanopore Technologies.
 
 This app will take the .csv file downloaded from the EPI2ME analysis and will conduct 3 secondary analyses:
 1) Generate rarefaction curves to determine if the run has achieved the proper sampling depth
