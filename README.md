@@ -26,14 +26,14 @@ You can then download the .pdf of the plot of interest by clicking the "Download
 
 Pull the Docker image from Dockerhub to run this pipeline as a container:
 ```
-docker pull ethill/epi2meviz:alpha
-docker run --name=epi2meviz --rm -d -p 3838:3838 ethill/epi2meviz:alpha
+docker pull ethill/epi2meviz:beta
+docker run --name=epi2meviz --rm -d -p 3838:3838 ethill/epi2meviz:beta
 ```
 
 Open a browser and nativate to http://localhost:3838/ to use the application.
 
 Alterantively, there is a dockerfile included in the repository which allows you to build the image yourself.
-Navigate to where you would store the github repository and then enter the following:
+Navigate to where you will store the github repository and then enter the following:
 ```
 git clone https://github.com/ehill-iolani/epi2meviz.git
 cd epi2meviz

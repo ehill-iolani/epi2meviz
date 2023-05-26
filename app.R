@@ -41,7 +41,7 @@ ui <- shinyUI(fluidPage(
                  textInput("filt", "Average EPI2ME Accuracy",
                            value = "80"),
                  checkboxGroupInput("barcodes", "Barcodes to Analyze",
-                           choices = bci, selected = "all"),
+                           choices = bci),
                ),
                mainPanel(
                  withSpinner(tableOutput("contents"))
@@ -55,6 +55,18 @@ ui <- shinyUI(fluidPage(
                actionButton("rare_help", "Help"),
                mainPanel(
                  withSpinner(plotOutput("rarefaction"))
+               )
+             )
+    ),
+    tabPanel("Rarefaction Table",
+             fluidPage(
+               headerPanel("Rarefaction Table"),
+               selectInput("rare_barcodes", "Select Barcode",
+                            choices = bci),
+               downloadButton("raref_butt", "Download CSV"),
+               actionButton("raref_help", "Help"),
+               mainPanel(
+                 withSpinner(tableOutput("rare"))
                )
              )
     ),
@@ -277,6 +289,36 @@ server <- function(input, output, session) {
       to capture the diversity of the sample. If the curve does not plateau,
       then more reads need to be sampled to capture the diversity of the
       sample."),
+      easyClose = TRUE,
+      footer = NULL
+    ))
+  })
+
+  # Display the rarefaction table
+  output$rare <- renderTable({
+    data()$rare[data()$rare$barcode == input$rare_barcodes, ]
+  })
+
+  # Download the rarefaction table
+  output$raref_butt <- downloadHandler(
+    filename = function() {
+      paste("rarefaction", ".csv", sep = "")
+    },
+    content = function(file) {
+      write.csv(data()$rare[data()$rare$barcode == input$rare_barcodes, ],
+                file, row.names = FALSE)
+    }
+  )
+
+  # Display the rarefaction table help
+  observeEvent(input$raref_help, {
+    showModal(modalDialog(
+      title = HTML("Rarefaction Table Help",
+      "The rarefaction table is the data used to generate rarefaction
+      curve seen on the preivous panel. It scales the subsamples of the data
+      based the size of the data set. The table logs the subsampling intervale
+      and the number of unique species recovered for each step in the 
+      subsampling process. The table can be downloaded as a .csv file."),
       easyClose = TRUE,
       footer = NULL
     ))
