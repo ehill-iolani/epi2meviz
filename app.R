@@ -42,6 +42,12 @@ ui <- shinyUI(fluidPage(
                            value = "80"),
                  checkboxGroupInput("barcodes", "Barcodes to Analyze",
                            choices = bci),
+                 fileInput("metadata", "Choose Metadata File",
+                           accept = c("text/csv",
+                                      "text/comma-separated-values,text/plain",
+                                      ".csv"),
+                           multiple = FALSE),
+                   actionButton("meta_help", "Help")
                ),
                mainPanel(
                  withSpinner(tableOutput("contents"))
@@ -111,6 +117,22 @@ server <- function(input, output, session) {
   # Set large upload size limit (server side)
   options(shiny.maxRequestSize = 70 * 1024^2)
 
+  # Input metadata ------------------------------------------------------------
+  observeEvent(input$meta_help, {
+    showModal(modalDialog(
+      title = HTML("Metadata Input",
+      "Metadata can be added to the data set by uploading a .csv file with
+      the barcodes and their corresponding information. The first column of the 
+      .csv file must be the barcode ID the additional columns must be the 
+      metadata value. The barcode ID must be the same as the barcode ID in the 
+      data"),
+      easyClose = TRUE,
+      footer = NULL
+    ))
+  })
+
+  # Logic for processing EPI2ME data ------------------------------------------
+
   data <- eventReactive(input$button, {
     # Filtering and cleaning the data -----------------------------------------
 
@@ -127,6 +149,13 @@ server <- function(input, output, session) {
                                    sep = input$sep)}))
     } else {
       dat <- read.csv(inFile$datapath, header = TRUE, sep = input$sep)
+    }
+
+    # Adds metadata to the data if it is uploaded
+    if (length(input$metadata) > 0) {
+      meta <- read.csv(input$metadata$datapath, header = TRUE)
+      meta <- na.omit(meta)
+      dat <- left_join(dat, meta, by = "barcode")
     }
 
     # Filters the data based on user input
