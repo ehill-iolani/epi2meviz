@@ -5,6 +5,7 @@ library(dplyr)
 library(tidyr)
 library(vegan)
 library(shinycssloaders)
+library(rlang)
 
 # Accessory Function(s) -------------------------------------------------------
 bc_sample <- function(x, y) {
@@ -42,6 +43,12 @@ ui <- shinyUI(fluidPage(
                            value = "80"),
                  checkboxGroupInput("barcodes", "Barcodes to Analyze",
                            choices = bci),
+                 fileInput("metadata", "Choose Metadata File",
+                           accept = c("text/csv",
+                                      "text/comma-separated-values,text/plain",
+                                      ".csv"),
+                           multiple = FALSE),
+                   actionButton("meta_help", "Help")
                ),
                mainPanel(
                  withSpinner(tableOutput("contents"))
@@ -95,13 +102,24 @@ ui <- shinyUI(fluidPage(
     tabPanel("Bray Curtis PCoA Plot",
              fluidPage(
                headerPanel("Bray Curtis PCoA"),
+               uiOutput("pcoa_meta"),
                downloadButton("braycurtis_butt", "Download PDF"),
                actionButton("braycurtis_help", "Help"),
                mainPanel(
                  withSpinner(plotOutput("bray_curtis"))
                )
              )
-  )
+  ),
+    tabPanel("Bray Curtis PCoA Table",
+             fluidPage(
+               headerPanel("Bray Curtis PCoA Table"),
+               downloadButton("braycurtisf_butt", "Download CSV"),
+               actionButton("braycurtisf_help", "Help"),
+               mainPanel(
+                 withSpinner(tableOutput("bray_curtis_tab"))
+               )
+             )
+    )
 )
 )
 )
@@ -110,6 +128,23 @@ ui <- shinyUI(fluidPage(
 server <- function(input, output, session) {
   # Set large upload size limit (server side)
   options(shiny.maxRequestSize = 70 * 1024^2)
+
+  # Input metadata ------------------------------------------------------------
+  observeEvent(input$meta_help, {
+    showModal(modalDialog(
+      title = HTML("Metadata Input",
+      "Metadata can be added to the data set by uploading a .csv file with
+      the barcodes and their corresponding information. The first column of the 
+      .csv file must be the barcode ID the additional columns must be the 
+      metadata value. The barcode ID must be the same as the barcode ID in the 
+      data. The metadata will be added to the data set and can be used to
+      filter the data after the analysis is complete."),
+      easyClose = TRUE,
+      footer = NULL
+    ))
+  })
+
+  # Logic for processing EPI2ME data ------------------------------------------
 
   data <- eventReactive(input$button, {
     # Filtering and cleaning the data -----------------------------------------
@@ -127,6 +162,13 @@ server <- function(input, output, session) {
                                    sep = input$sep)}))
     } else {
       dat <- read.csv(inFile$datapath, header = TRUE, sep = input$sep)
+    }
+
+    # Adds metadata to the data if it is uploaded
+    if (length(input$metadata) > 0) {
+      meta <- read.csv(input$metadata$datapath, header = TRUE)
+      meta <- na.omit(meta)
+      dat <- left_join(dat, meta, by = "barcode")
     }
 
     # Filters the data based on user input
@@ -211,6 +253,31 @@ server <- function(input, output, session) {
     # Bray Curtis PCoA
     if (length(bc) < 3) {
       print("Not enough barcodes to perform Bray Curtis PCoA")
+    } else if (dim(dat)[2] > 11) {
+      ########### WORK IN PROGRESS ###########
+
+      brayc <- dat[, c(7, 3, 12:ncol(dat))]
+      brayci <- length(12:ncol(dat)) + 2
+      brayc <- brayc %>%
+               group_by(brayc[1], brayc[2], brayc[3:ncol(brayc)]) %>%
+               tally()
+      brayc <- brayc[brayc$n > 5, ]
+      brayc <- brayc %>% pivot_wider(names_from = species, values_from = n)
+
+      # Replaces NA with 0
+      brayc[is.na(brayc)] <- 0
+      bray_out <- vegdist(brayc[brayci:dim(brayc)[2]], method = "bray")
+
+      # Performs PCoA and renames output
+      bray_curtis_pcoa <- cmdscale(bray_out, k = 2, eig = TRUE, add = TRUE)
+      bray_curtis_pcoa_dat <- as.data.frame(bray_curtis_pcoa$points)
+      bray_curtis_pcoa_dat <- cbind(bray_curtis_pcoa_dat,
+                                    brayc[1:brayci - 1])
+      names(bray_curtis_pcoa_dat)[1:3] <- c("PCoA_1", "PCoA_2", "Barcode")
+      pcoa_meta <- names(bray_curtis_pcoa_dat)[3:length(bray_curtis_pcoa_dat)]
+
+      ########### WORK IN PROGRESS ###########
+
     } else {
       brayc <- dat[, c("species", "barcode")]
       brayc <- brayc %>% group_by(species, barcode) %>% tally()
@@ -219,7 +286,7 @@ server <- function(input, output, session) {
 
       # Replaces NA with 0
       brayc[is.na(brayc)] <- 0
-      bray_out <- vegdist(brayc[5:dim(brayc)[2]], method = "bray")
+      bray_out <- vegdist(brayc[2:dim(brayc)[2]], method = "bray")
 
       # Performs PCoA and renames output
       bray_curtis_pcoa <- cmdscale(bray_out, k = 2, eig = TRUE, add = TRUE)
@@ -227,6 +294,7 @@ server <- function(input, output, session) {
       bray_curtis_pcoa_dat <- cbind(bray_curtis_pcoa_dat,
                                   brayc$barcode)
       names(bray_curtis_pcoa_dat) <- c("PCoA_1", "PCoA_2", "Barcode")
+      pcoa_meta <- names(bray_curtis_pcoa_dat)[3:length(bray_curtis_pcoa_dat)]
     }
 
   # Returns analysis outputs --------------------------------------------------
@@ -239,7 +307,8 @@ server <- function(input, output, session) {
     } else {
       combo <- list(rdat = rdat, rare = rare, relab = relab,
                     relabf = relabf,
-                    bray_curtis_pcoa_dat = bray_curtis_pcoa_dat)
+                    bray_curtis_pcoa_dat = bray_curtis_pcoa_dat,
+                    pcoa_meta = pcoa_meta)
       return(combo)
     }
   })
@@ -394,13 +463,19 @@ server <- function(input, output, session) {
     }
   )
 
-  # Display the Bray Curtis PCoA plot
+  # Display the Bray Curtis PCoA plot options
+    output$pcoa_meta <- renderUI({
+      selectInput(
+        "pcoa_meta",
+        "Select Metadata",
+        data()$pcoa_meta)
+      })
+
+  # Display the Bray Curtis PCoA plot with reactive colors based on metadata ---
     output$bray_curtis <- renderPlot({
-      req(data()$bray_curtis_pcoa_dat)
       ggplot(data = data()$bray_curtis_pcoa_dat, aes(x = PCoA_1,
-                                                     y = PCoA_2,
-                                                     color = Barcode)) +
-      geom_point(size = 4) +
+                                                     y = PCoA_2)) +
+      geom_point(size = 4, aes(color = .data[[input$pcoa_meta]])) +
       theme_bw()
     })
 
@@ -412,9 +487,8 @@ server <- function(input, output, session) {
     content = function(file) {
       pdf(file)
       print(ggplot(data = data()$bray_curtis_pcoa_dat, aes(x = PCoA_1,
-                                                           y = PCoA_2,
-                                                           color = Barcode)) +
-      geom_point(size = 4) +
+                                                           y = PCoA_2)) +
+      geom_point(size = 4, aes(color = .data[[input$pcoa_meta]])) +
       theme_bw())
       dev.off()
     }
@@ -426,8 +500,26 @@ server <- function(input, output, session) {
       title = HTML("Bray Curtis PCoA Plot Help",
       "Bray Curtis PCoA plots are used to visualize the similarity between
       samples based on species present. The x-axis represents the first 
-      principal coordinate and they-axis represents the second principal 
-      coordinate. The legend representsthe sample ID. <br/> <br/>
+      principal coordinate and the y-axis represents the second principal 
+      coordinate. The legend represents the sample ID. <br/> <br/>
+      This will not run if there are less than 3 barcodes."),
+      easyClose = TRUE,
+      footer = NULL
+    ))
+  })
+
+  # Display the Bray Curtis PCoA table
+  output$bray_curtis_tab <- renderTable({
+    data()$bray_curtis_pcoa_dat
+  })
+
+  # Display the Bray Curtis PCoA table help
+  observeEvent(input$braycurtisf_help, {
+    showModal(modalDialog(
+      title = HTML("Bray Curtis PCoA Table Help",
+      "The Bray Curtis PCoA table is used to visualize the similarity between
+      samples based on species present. The table can be downloaded as 
+      a .csv file.  <br/> <br/>
       This will not run if there are less than 3 barcodes."),
       easyClose = TRUE,
       footer = NULL
