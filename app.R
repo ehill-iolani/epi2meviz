@@ -497,8 +497,8 @@ server <- function(input, output, session) {
       title = HTML("Bray Curtis PCoA Plot Help",
       "Bray Curtis PCoA plots are used to visualize the similarity between
       samples based on species present. The x-axis represents the first 
-      principal coordinate and they-axis represents the second principal 
-      coordinate. The legend representsthe sample ID. <br/> <br/>
+      principal coordinate and the y-axis represents the second principal 
+      coordinate. The legend represents the sample ID. <br/> <br/>
       This will not run if there are less than 3 barcodes."),
       easyClose = TRUE,
       footer = NULL
@@ -516,7 +516,8 @@ server <- function(input, output, session) {
       title = HTML("Bray Curtis PCoA Table Help",
       "The Bray Curtis PCoA table is used to visualize the similarity between
       samples based on species present. The table can be downloaded as 
-      a .csv file."),
+      a .csv file.  <br/> <br/>
+      This will not run if there are less than 3 barcodes."),
       easyClose = TRUE,
       footer = NULL
     ))
