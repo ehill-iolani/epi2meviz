@@ -18,8 +18,5 @@ RUN R -e "install.packages(c('ggplot2', 'dplyr', 'stringr', 'tidyr', 'vegan', 's
 
 # Copy the app to the image
 RUN rm -r /srv/shiny-server/*
-RUN git clone https://github.com/ehill-iolani/epi2meviz.git && \
-    cd epi2meviz && \
-    git checkout dev && \
-    cp -r ~/epi2meviz/* /srv/shiny-server/ && \
-    rm -r epi2meviz
+RUN cp -r ~/github/epi2meviz/* /srv/shiny-server/
+RUN rm -r epi2meviz
