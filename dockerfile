@@ -14,9 +14,10 @@ RUN apt update
 RUN apt install -y nano git
 
 # Install R packages
-RUN R -e "install.packages(c('ggplot2', 'dplyr', 'stringr', 'tidyr', 'vegan', 'shinycssloaders', 'rlang'))"
+RUN R -e "install.packages(c('ggplot2', 'dplyr', 'stringr', 'tidyr', 'vegan', 'shinycssloaders','rlang'))"
 
 # Copy the app to the image
 RUN rm -r /srv/shiny-server/*
-RUN cp -r ~/github/epi2meviz/* /srv/shiny-server/
+RUN git clone https://github.com/ehill-iolani/epi2meviz.git
+RUN cp -r epi2meviz/* /srv/shiny-server/
 RUN rm -r epi2meviz
