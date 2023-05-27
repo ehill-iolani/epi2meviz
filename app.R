@@ -255,6 +255,7 @@ server <- function(input, output, session) {
       print("Not enough barcodes to perform Bray Curtis PCoA")
     } else if (dim(dat)[2] > 11) {
       ########### WORK IN PROGRESS ###########
+
       brayc <- dat[, c(7, 3, 12:ncol(dat))]
       brayci <- length(12:ncol(dat)) + 2
       brayc <- brayc %>%
@@ -273,8 +274,10 @@ server <- function(input, output, session) {
       bray_curtis_pcoa_dat <- cbind(bray_curtis_pcoa_dat,
                                     brayc[1:brayci - 1])
       names(bray_curtis_pcoa_dat)[1:3] <- c("PCoA_1", "PCoA_2", "Barcode")
-      poca_meta <- names(bray_curtis_pcoa_dat)[3:length(bray_curtis_pcoa_dat)]
+      pcoa_meta <- names(bray_curtis_pcoa_dat)[3:length(bray_curtis_pcoa_dat)]
+
       ########### WORK IN PROGRESS ###########
+
     } else {
       brayc <- dat[, c("species", "barcode")]
       brayc <- brayc %>% group_by(species, barcode) %>% tally()
@@ -291,7 +294,7 @@ server <- function(input, output, session) {
       bray_curtis_pcoa_dat <- cbind(bray_curtis_pcoa_dat,
                                   brayc$barcode)
       names(bray_curtis_pcoa_dat) <- c("PCoA_1", "PCoA_2", "Barcode")
-      poca_meta <- names(bray_curtis_pcoa_dat)[3:length(bray_curtis_pcoa_dat)]
+      pcoa_meta <- names(bray_curtis_pcoa_dat)[3:length(bray_curtis_pcoa_dat)]
     }
 
   # Returns analysis outputs --------------------------------------------------
@@ -305,7 +308,7 @@ server <- function(input, output, session) {
       combo <- list(rdat = rdat, rare = rare, relab = relab,
                     relabf = relabf,
                     bray_curtis_pcoa_dat = bray_curtis_pcoa_dat,
-                    pcoa_meta = poca_meta)
+                    pcoa_meta = pcoa_meta)
       return(combo)
     }
   })
