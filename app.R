@@ -6,6 +6,7 @@ library(tidyr)
 library(vegan)
 library(shinycssloaders)
 library(rlang)
+library(bslib)
 
 # Accessory Function(s) -------------------------------------------------------
 bc_sample <- function(x, y) {
@@ -24,101 +25,114 @@ bci <- c("barcode01", "barcode02", "barcode03", "barcode04", "barcode05",
 
 # Define the UI ---------------------------------------------------------------
 ui <- shinyUI(fluidPage(
+  theme = bs_theme(bootswatch = "zephyr"),
   titlePanel("Post EPI2ME Analysis"),
   tabsetPanel(
     tabPanel("Upload EPI2ME .csv",
-             titlePanel("Uploading Files and Setting Parameters"),
-             sidebarLayout(
-               sidebarPanel(
-                 fileInput("file1", "Choose EPI2ME .csv File",
-                           accept = c("text/csv",
+            p(HTML("<br/> This app is designed to process the classifications 
+            of reads from the Oxford Nanopore Technologies 16S EPI2ME analysis. 
+            The app will analyze the data based on user input accuracy of 
+            reads and the barcodes selected. The app will then generate a 
+            rarefaction curve, a relative abundance plot, and a Bray Curtis
+            PCoA plot. The app will also generate a table of the data for 
+            each of the plots. The inputs for the app are the EPI2ME .csv file,
+            the average accuracy of the reads, and the barcodes to analyze 
+            recovered from the EPI2ME dashboard. You may also provide an 
+            optional metadata file to add metadata to the data set. The 
+            metadata file must be a .csv file with the barcode ID in the first 
+            column and the metadata in the following columns.")),
+            titlePanel("Uploading Files and Setting Parameters"),
+            sidebarLayout(
+              sidebarPanel(
+                fileInput("file1", "Choose EPI2ME .csv File",
+                          accept = c("text/csv",
                                     "text/comma-separated-values,text/plain",
                                     ".csv"),
-                           multiple = TRUE),
-                 actionButton("button", "Submit"),
-                 radioButtons("sep", "Separator",
-                              c(Comma = ","),
-                              ","),
-                 textInput("filt", "Average EPI2ME Accuracy",
-                           value = "80"),
-                 checkboxGroupInput("barcodes", "Barcodes to Analyze",
-                           choices = bci),
-                 fileInput("metadata", "Choose Metadata File",
-                           accept = c("text/csv",
-                                      "text/comma-separated-values,text/plain",
-                                      ".csv"),
-                           multiple = FALSE),
-                   actionButton("meta_help", "Help")
+                          multiple = TRUE),
+                actionButton("button", "Submit"),
+                radioButtons("sep", "Separator",
+                            c(Comma = ","),
+                            ","),
+                textInput("filt", "Average EPI2ME Accuracy",
+                          value = "80"),
+                checkboxGroupInput("barcodes", HTML("Barcodes to Analyze"),
+                          choices = bci),
+                fileInput("metadata", "Choose Metadata File",
+                          accept = c("text/csv",
+                                    "text/comma-separated-values,text/plain",
+                                    ".csv"),
+                          multiple = FALSE),
+                  actionButton("meta_help", "Help")
                ),
-               mainPanel(
-                 withSpinner(tableOutput("contents"))
-               )
+                mainPanel(
+                  withSpinner(tableOutput("contents"))
+                )
              )
     ),
     tabPanel("Rarefaction Curve",
-             fluidPage(
-               headerPanel("Rarefaction Curves"),
-               downloadButton("rare_butt", "Download PDF"),
-               actionButton("rare_help", "Help"),
-               mainPanel(
-                 withSpinner(plotOutput("rarefaction"))
-               )
-             )
+            fluidPage(
+              headerPanel("Rarefaction Curves"),
+              downloadButton("rare_butt", "Download PDF"),
+              actionButton("rare_help", "Help"),
+              mainPanel(
+                withSpinner(plotOutput("rarefaction"))
+              )
+            )
     ),
     tabPanel("Rarefaction Table",
-             fluidPage(
-               headerPanel("Rarefaction Table"),
-               selectInput("rare_barcodes", "Select Barcode",
-                            choices = bci),
-               downloadButton("raref_butt", "Download CSV"),
-               actionButton("raref_help", "Help"),
-               mainPanel(
-                 withSpinner(tableOutput("rare"))
-               )
-             )
+            fluidPage(
+              headerPanel("Rarefaction Table"),
+              selectInput("rare_barcodes", "Select Barcode",
+                          choices = ""),
+              downloadButton("raref_butt", "Download CSV"),
+              actionButton("raref_help", "Help"),
+              mainPanel(
+                withSpinner(tableOutput("rare"))
+              )
+            )
     ),
     tabPanel("Relative Abundance Plot",
-             fluidPage(
-               headerPanel("Relative Abundance"),
-               downloadButton("relab_butt", "Download PDF"),
-               actionButton("relab_help", "Help"),
-               mainPanel(
-                 withSpinner(plotOutput("relative_abundance"))
-               )
-             )
+            fluidPage(
+              headerPanel("Relative Abundance"),
+              downloadButton("relab_butt", "Download PDF"),
+              actionButton("relab_help", "Help"),
+              mainPanel(
+                withSpinner(plotOutput("relative_abundance"))
+              )
+            )
     ),
     tabPanel("Relative Abundance Table",
-             fluidPage(
-               headerPanel("Relative Abundance Table"),
-               selectInput("relab_barcode", "Select Barcode",
-                           choices = bci),
-               downloadButton("relabf_butt", "Download CSV"),
-               actionButton("relabf_help", "Help"),
-               mainPanel(
-                 withSpinner(tableOutput("relab"))
-               )
-             )
+            fluidPage(
+              headerPanel("Relative Abundance Table"),
+              selectInput("relab_barcode", "Select Barcode",
+                          choices = ""),
+              downloadButton("relabf_butt", "Download CSV"),
+              actionButton("relabf_help", "Help"),
+              mainPanel(
+                withSpinner(tableOutput("relab"))
+              )
+            )
     ),
     tabPanel("Bray Curtis PCoA Plot",
-             fluidPage(
-               headerPanel("Bray Curtis PCoA"),
-               uiOutput("pcoa_meta"),
-               downloadButton("braycurtis_butt", "Download PDF"),
-               actionButton("braycurtis_help", "Help"),
-               mainPanel(
-                 withSpinner(plotOutput("bray_curtis"))
-               )
-             )
+            fluidPage(
+              headerPanel("Bray Curtis PCoA"),
+              uiOutput("pcoa_meta"),
+              downloadButton("braycurtis_butt", "Download PDF"),
+              actionButton("braycurtis_help", "Help"),
+              mainPanel(
+                withSpinner(plotOutput("bray_curtis"))
+              )
+            )
   ),
     tabPanel("Bray Curtis PCoA Table",
-             fluidPage(
-               headerPanel("Bray Curtis PCoA Table"),
-               downloadButton("braycurtisf_butt", "Download CSV"),
-               actionButton("braycurtisf_help", "Help"),
-               mainPanel(
-                 withSpinner(tableOutput("bray_curtis_tab"))
-               )
-             )
+            fluidPage(
+              headerPanel("Bray Curtis PCoA Table"),
+              downloadButton("braycurtisf_butt", "Download CSV"),
+              actionButton("braycurtisf_help", "Help"),
+              mainPanel(
+                withSpinner(tableOutput("bray_curtis_tab"))
+              )
+            )
     )
 )
 )
@@ -228,6 +242,11 @@ server <- function(input, output, session) {
     # Renames columns of processed data
     names(rare) <- c("unique_species", "reads_sampled", "barcode")
 
+    # Update rarefaction table choices based on barcodes present in data ------
+    updateSelectizeInput(session, "rare_barcodes",
+                         choices = unique(rare$barcode)
+                                   [order(unique(rare$barcode))])
+
   # Calculates Relative abundance ---------------------------------------------
 
     # Calculates relative abundance per barcode
@@ -248,14 +267,18 @@ server <- function(input, output, session) {
     relabf <- relabf[with(relabf, order(Barcode, rel_ab, decreasing = TRUE)), ]
     names(relabf) <- c("Genus", "Barcode", "Relative Abundance (%)")
 
+    # Update relative abundance table choices based on barcodes present in data
+    updateSelectizeInput(session, "relab_barcode",
+                         choices = unique(relabf$Barcode)
+                                   [order(unique(relabf$Barcode))])
+
   # Conducts Bray Curtis PCoA -------------------------------------------------
 
     # Bray Curtis PCoA
     if (length(bc) < 3) {
       print("Not enough barcodes to perform Bray Curtis PCoA")
+    # Logic if metadata is provided
     } else if (dim(dat)[2] > 11) {
-      ########### WORK IN PROGRESS ###########
-
       brayc <- dat[, c(7, 3, 12:ncol(dat))]
       brayci <- length(12:ncol(dat)) + 2
       brayc <- brayc %>%
@@ -275,9 +298,7 @@ server <- function(input, output, session) {
                                     brayc[1:brayci - 1])
       names(bray_curtis_pcoa_dat)[1:3] <- c("PCoA_1", "PCoA_2", "Barcode")
       pcoa_meta <- names(bray_curtis_pcoa_dat)[3:length(bray_curtis_pcoa_dat)]
-
-      ########### WORK IN PROGRESS ###########
-
+    # Logic if no metadata is provided
     } else {
       brayc <- dat[, c("species", "barcode")]
       brayc <- brayc %>% group_by(species, barcode) %>% tally()
@@ -317,7 +338,8 @@ server <- function(input, output, session) {
 
   # Display the table of processed data
   output$contents <- renderTable({
-    head(data()$rdat)
+    temp <- data()$rdat[order(data()$rdat$barcode), ]
+    temp[!duplicated(temp$barcode), ]
   })
 
   # Display the rarefaction curve
@@ -371,7 +393,7 @@ server <- function(input, output, session) {
   # Download the rarefaction table
   output$raref_butt <- downloadHandler(
     filename = function() {
-      paste("rarefaction", ".csv", sep = "")
+      paste("rarefaction", "_", input$rare_barcodes, ".csv", sep = "")
     },
     content = function(file) {
       write.csv(data()$rare[data()$rare$barcode == input$rare_barcodes, ],
@@ -455,7 +477,7 @@ server <- function(input, output, session) {
   # Download the relative abundance table
   output$relabf_butt <- downloadHandler(
     filename = function() {
-      paste("relative_abundance", ".csv", sep = "")
+      paste("relative_abundance", "_", input$relab_barcode, ".csv", sep = "")
     },
     content = function(file) {
       write.csv(data()$relabf[data()$relabf$Barcode == input$relab_barcode, ],
@@ -471,7 +493,7 @@ server <- function(input, output, session) {
         data()$pcoa_meta)
       })
 
-  # Display the Bray Curtis PCoA plot with reactive colors based on metadata ---
+  # Display the Bray Curtis PCoA plot w/ options
     output$bray_curtis <- renderPlot({
       ggplot(data = data()$bray_curtis_pcoa_dat, aes(x = PCoA_1,
                                                      y = PCoA_2)) +
