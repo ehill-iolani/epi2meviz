@@ -7,6 +7,7 @@ library(vegan)
 library(shinycssloaders)
 library(rlang)
 library(bslib)
+library(plotly)
 
 # Accessory Function(s) -------------------------------------------------------
 bc_sample <- function(x, y) {
@@ -75,7 +76,7 @@ ui <- shinyUI(fluidPage(
               downloadButton("rare_butt", "Download PDF"),
               actionButton("rare_help", "Help"),
               mainPanel(
-                withSpinner(plotOutput("rarefaction"))
+                withSpinner(plotlyOutput("rarefaction"))
               )
             )
     ),
@@ -97,7 +98,7 @@ ui <- shinyUI(fluidPage(
               downloadButton("relab_butt", "Download PDF"),
               actionButton("relab_help", "Help"),
               mainPanel(
-                withSpinner(plotOutput("relative_abundance"))
+                withSpinner(plotlyOutput("relative_abundance"))
               )
             )
     ),
@@ -120,10 +121,10 @@ ui <- shinyUI(fluidPage(
               downloadButton("braycurtis_butt", "Download PDF"),
               actionButton("braycurtis_help", "Help"),
               mainPanel(
-                withSpinner(plotOutput("bray_curtis"))
+                withSpinner(plotlyOutput("bray_curtis"))
               )
             )
-  ),
+    ),
     tabPanel("Bray Curtis PCoA Table",
             fluidPage(
               headerPanel("Bray Curtis PCoA Table"),
@@ -343,13 +344,13 @@ server <- function(input, output, session) {
   })
 
   # Display the rarefaction curve
-  output$rarefaction <- renderPlot({
-    ggplot(data = data()$rare, aes(x = reads_sampled,
+  output$rarefaction <- renderPlotly({
+    ggplotly(ggplot(data = data()$rare, aes(x = reads_sampled,
                                      y = unique_species,
                                      color = barcode)) +
     geom_point(size = 2, aes(group = barcode)) +
     labs(x = "Reads Sampled", y = "Unique Species", fill = "Genus") +
-    theme_bw()
+    theme_bw())
   })
 
   # Download the rarefaction curve
@@ -416,14 +417,14 @@ server <- function(input, output, session) {
   })
 
   # Display the relative abundance plot
-  output$relative_abundance <- renderPlot({
-    ggplot(data = data()$relab, aes(x = barcode,
+  output$relative_abundance <- renderPlotly({
+    ggplotly(ggplot(data = data()$relab, aes(x = barcode,
                                      y = rel_ab,
                                      fill = genus)) +
     geom_bar(stat = "identity") +
     theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
     labs(x = "Sample ID", y = "Relative Abundance", fill = "Genus") +
-    theme_bw()
+    theme_bw())
   })
 
   # Display the relative abundance plot help
@@ -494,11 +495,11 @@ server <- function(input, output, session) {
       })
 
   # Display the Bray Curtis PCoA plot w/ options
-    output$bray_curtis <- renderPlot({
-      ggplot(data = data()$bray_curtis_pcoa_dat, aes(x = PCoA_1,
+    output$bray_curtis <- renderPlotly({
+      ggplotly(ggplot(data = data()$bray_curtis_pcoa_dat, aes(x = PCoA_1,
                                                      y = PCoA_2)) +
       geom_point(size = 4, aes(color = .data[[input$pcoa_meta]])) +
-      theme_bw()
+      theme_bw())
     })
 
   # Download the Bray Curtis PCoA plot
