@@ -27,7 +27,7 @@ bci <- c("barcode01", "barcode02", "barcode03", "barcode04", "barcode05",
 # Define the UI ---------------------------------------------------------------
 ui <- shinyUI(fluidPage(
   theme = bs_theme(bootswatch = "zephyr"),
-  titlePanel("Post EPI2ME Analysis"),
+  titlePanel("EPI2MEviz"),
   tabsetPanel(
     tabPanel("Upload EPI2ME .csv",
             p(HTML("<br/> This app is designed to process the classifications 
