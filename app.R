@@ -487,25 +487,25 @@ server <- function(input, output, session) {
   )
 
   # Display the Bray Curtis PCoA plot options
-    output$pcoa_meta <- renderUI({
-      selectInput(
-        "pcoa_meta",
-        "Select Metadata",
-        data()$pcoa_meta)
-      })
+  output$pcoa_meta <- renderUI({
+    selectInput(
+      "pcoa_meta",
+      "Select Metadata",
+      data()$pcoa_meta)
+  })
 
   # Display the Bray Curtis PCoA plot w/ options
-    output$bray_curtis <- renderPlotly({
-      ggplotly(ggplot(data = data()$bray_curtis_pcoa_dat, aes(x = PCoA_1,
+  output$bray_curtis <- renderPlotly({
+    ggplotly(ggplot(data = data()$bray_curtis_pcoa_dat, aes(x = PCoA_1,
                                                      y = PCoA_2)) +
       geom_point(size = 4, aes(color = .data[[input$pcoa_meta]])) +
-      theme_bw())
-    })
+    theme_bw())
+  })
 
   # Download the Bray Curtis PCoA plot
   output$braycurtis_butt <- downloadHandler(
     filename = function() {
-      paste("bray_curtis", ".pdf", sep = "")
+      paste("bray_curtis_", input$pcoa_meta, ".pdf", sep = "")
     },
     content = function(file) {
       pdf(file)
