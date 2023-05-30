@@ -536,6 +536,16 @@ server <- function(input, output, session) {
     data()$bray_curtis_pcoa_dat
   })
 
+  # Download the Bray Curtis PCoA table
+  output$braycurtisf_butt <- downloadHandler(
+    filename = function() {
+      paste("bray_curtis", "_", "pcoa", ".csv", sep = "")
+    },
+    content = function(file) {
+      write.csv(data()$bray_curtis_pcoa_dat, file, row.names = FALSE)
+    }
+  )
+
   # Display the Bray Curtis PCoA table help
   observeEvent(input$braycurtisf_help, {
     showModal(modalDialog(
