@@ -41,7 +41,13 @@ ui <- shinyUI(fluidPage(
             recovered from the EPI2ME dashboard. You may also provide an 
             optional metadata file to add metadata to the data set. The 
             metadata file must be a .csv file with the barcode ID in the first 
-            column and the metadata in the following columns.")),
+            column and the metadata in the following columns. <br/> <br/> 
+            If you do not remember which barcodes you used, you can leave the
+            selection blank and the app will use all barcodes it finds in the 
+            data set.  <br/> <br/> If you have any questions or comments please
+            contact me at ehill@iolani.org or create an issue on the
+            github repository: 
+            https://github.com/ehill-iolani/epi2meviz/issues")),
             titlePanel("Uploading Files and Setting Parameters"),
             sidebarLayout(
               sidebarPanel(
@@ -54,10 +60,11 @@ ui <- shinyUI(fluidPage(
                 radioButtons("sep", "Separator",
                             c(Comma = ","),
                             ","),
-                textInput("filt", "Average EPI2ME Accuracy",
+                textInput("filt", "Average EPI2ME Accuracy (1-99)",
                           value = "80"),
                 checkboxGroupInput("barcodes", HTML("Barcodes to Analyze"),
-                          choices = bci),
+                          choices = bci, inline = TRUE),
+                  actionButton("bar_help", "Help"),
                 fileInput("metadata", "Choose Metadata File",
                           accept = c("text/csv",
                                     "text/comma-separated-values,text/plain",
@@ -147,8 +154,8 @@ server <- function(input, output, session) {
   # Input metadata ------------------------------------------------------------
   observeEvent(input$meta_help, {
     showModal(modalDialog(
-      title = HTML("Metadata Input",
-      "Metadata can be added to the data set by uploading a .csv file with
+      title = "Metadata Input",
+      HTML("Metadata can be added to the data set by uploading a .csv file with
       the barcodes and their corresponding information. The first column of the 
       .csv file must be the barcode ID the additional columns must be the 
       metadata value. The barcode ID must be the same as the barcode ID in the 
@@ -186,13 +193,25 @@ server <- function(input, output, session) {
       dat <- left_join(dat, meta, by = "barcode")
     }
 
-    # Filters the data based on user input
+    # Filters the data based on user input; if no barcodes are entered
+    # the script will scrap the unique barcodes from the input data
+    if (length(input$barcodes) == 0) {
+      bcii <- unique(dat$barcode)
+      dat <- dat[dat$barcode %in% bcii, ]
+    } else {
     dat <- dat[dat$barcode %in% input$barcodes, ]
+    }
 
-    # First pass filtering
-    dat <- dat[dat$accuracy > input$filt, ]
-    dat <- dat[dat$species != "unclassified", ]
-    dat <- dat[dat$barcode != "unclassified", ]
+    # First pass filtering; if the input is <1% or >99% accuracy
+    # it will default to 80% accuracy
+    if (input$filt < 1 | input$filt > 99) {
+      ifilt <- 80
+      dat <- dat[dat$accuracy > ifilt, ]
+    } else {
+      dat <- dat[dat$accuracy > input$filt, ]
+      dat <- dat[dat$species != "unclassified", ]
+      dat <- dat[dat$barcode != "unclassified", ]
+    }
 
     # Cleans up species and genus names
     dat$species <- word(dat$species, 1, 2, sep = " ")
@@ -335,12 +354,27 @@ server <- function(input, output, session) {
     }
   })
 
-  # Visualizing/Downloading outputs -------------------------------------------
+  # Help/Visualizing/Downloading outputs --------------------------------------
 
   # Display the table of processed data
   output$contents <- renderTable({
     temp <- data()$rdat[order(data()$rdat$barcode), ]
     temp[!duplicated(temp$barcode), ]
+  })
+
+  # Display barcode help
+  observeEvent(input$bar_help, {
+    showModal(modalDialog(
+      title = "Barcode Selection",
+      HTML("Barcodes are the unique identifiers for each sample. They are
+      typically 12-16 base pairs long and are used to identify the
+      sample in the sequencing run. Barcodes are used to sort the
+      sequences into their respective samples. <br/> <br/> 
+      If you leave this field blank the app will process all barcodes found 
+      in the dataset."),
+      easyClose = TRUE,
+      footer = NULL
+    ))
   })
 
   # Display the rarefaction curve
@@ -373,8 +407,8 @@ server <- function(input, output, session) {
   # Display the rarefaction curve help
   observeEvent(input$rare_help, {
     showModal(modalDialog(
-      title = HTML("Rarefaction Curve Help",
-      "Rarefaction curves are used to determine if enough reads have been
+      title = "Rarefaction Curve Help",
+      HTML("Rarefaction curves are used to determine if enough reads have been
       sampled to capture the diversity of a sample. The x-axis represents the
       number of reads sampled and the y-axis represents the number of unique
       species found. If the curve plateaus, then enough reads have been sampled
@@ -405,8 +439,8 @@ server <- function(input, output, session) {
   # Display the rarefaction table help
   observeEvent(input$raref_help, {
     showModal(modalDialog(
-      title = HTML("Rarefaction Table Help",
-      "The rarefaction table is the data used to generate rarefaction
+      title = "Rarefaction Table Help",
+      HTML("The rarefaction table is the data used to generate rarefaction
       curve seen on the preivous panel. It scales the subsamples of the data
       based the size of the data set. The table logs the subsampling intervale
       and the number of unique species recovered for each step in the 
@@ -430,11 +464,11 @@ server <- function(input, output, session) {
   # Display the relative abundance plot help
   observeEvent(input$relab_help, {
     showModal(modalDialog(
-      title = HTML("Relative Abundance Plot Help",
-      "Relative abundance plots are used to visualize the relative abundance
-      of each genus in each sample. The x-axis represents the sample ID and
-      the y-axis represents the relative abundance of each genus. The legend
-      represents the genus of each species."),
+      title = "Relative Abundance Plot Help",
+      HTML("Relative abundance plots are used to visualize the relative 
+      abundance of each genus in each sample. The x-axis represents the 
+      sample ID and the y-axis represents the relative abundance of each 
+      genus. The legend represents the genus of each species."),
       easyClose = TRUE,
       footer = NULL
     ))
@@ -461,10 +495,11 @@ server <- function(input, output, session) {
   # Display the relative abundance table help
   observeEvent(input$relabf_help, {
     showModal(modalDialog(
-      title = HTML("Relative Abundance Table Help",
-      "The relative abundance table is used to visualize the relative abundance
-      of each genus in each sample. The table is sorted by barcode and then
-      relative abundance. The table can be downloaded as a .csv file."),
+      title = "Relative Abundance Table Help",
+      HTML("The relative abundance table is used to visualize the relative 
+      abundance of each genus in each sample. The table is sorted by barcode 
+      and then relative abundance. The table can be downloaded as a 
+      .csv file."),
       easyClose = TRUE,
       footer = NULL
     ))
@@ -520,8 +555,8 @@ server <- function(input, output, session) {
   # Display the Bray Curtis PCoA plot help
   observeEvent(input$braycurtis_help, {
     showModal(modalDialog(
-      title = HTML("Bray Curtis PCoA Plot Help",
-      "Bray Curtis PCoA plots are used to visualize the similarity between
+      title = "Bray Curtis PCoA Plot Help",
+      HTML("Bray Curtis PCoA plots are used to visualize the similarity between
       samples based on species present. The x-axis represents the first 
       principal coordinate and the y-axis represents the second principal 
       coordinate. The legend represents the sample ID. <br/> <br/>
@@ -549,10 +584,10 @@ server <- function(input, output, session) {
   # Display the Bray Curtis PCoA table help
   observeEvent(input$braycurtisf_help, {
     showModal(modalDialog(
-      title = HTML("Bray Curtis PCoA Table Help",
-      "The Bray Curtis PCoA table is used to visualize the similarity between
-      samples based on species present. The table can be downloaded as 
-      a .csv file.  <br/> <br/>
+      title = "Bray Curtis PCoA Table Help",
+      HTML("The Bray Curtis PCoA table is used to visualize the 
+      similarity between samples based on species present. The table 
+      can be downloaded as a .csv file.  <br/> <br/>
       This will not run if there are less than 3 barcodes."),
       easyClose = TRUE,
       footer = NULL
