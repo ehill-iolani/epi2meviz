@@ -40,8 +40,9 @@ ui <- shinyUI(fluidPage(
             the average accuracy of the reads, and the barcodes to analyze 
             recovered from the EPI2ME dashboard. You may also provide an 
             optional metadata file to add metadata to the data set. The 
-            metadata file must be a .csv file with the barcode ID in the first 
-            column and the metadata in the following columns. <br/> <br/> 
+            metadata file must be a .csv file with the ''barcode'' in the first 
+            column and ''id'' in the second column. The remaing metdata can be
+            input into the following columns. <br/> <br/> 
             If you do not remember which barcodes you used, you can leave the
             selection blank and the app will use all barcodes it finds in the 
             data set.  <br/> <br/> If you have any questions or comments please
@@ -102,6 +103,7 @@ ui <- shinyUI(fluidPage(
     tabPanel("Relative Abundance Plot",
             fluidPage(
               headerPanel("Relative Abundance"),
+              uiOutput("relab_meta"),
               downloadButton("relab_butt", "Download PDF"),
               actionButton("relab_help", "Help"),
               mainPanel(
@@ -270,22 +272,42 @@ server <- function(input, output, session) {
   # Calculates Relative abundance ---------------------------------------------
 
     # Calculates relative abundance per barcode
+    # If metdata is not present
+    if (dim(dat)[2] < 12) {
     adat <- dat %>% group_by(genus, barcode) %>% tally()
-    adat <- adat[adat$n > 5, ]
+    adat <- adat[adat$n > 1, ]
     relab <- data.frame()
-
     for (i in bc) {
       temp <- adat[adat$barcode == i, ]
       temp$rel_ab <- temp$n / sum(temp$n)
       relab <- rbind(relab, temp)
     }
-
     # Cleans table for presentation
     relabf <- data.frame(relab$genus, relab$barcode, relab$rel_ab)
     names(relabf) <- c("Genus", "Barcode", "rel_ab")
     relabf$rel_ab <- relabf$rel_ab * 100
     relabf <- relabf[with(relabf, order(Barcode, rel_ab, decreasing = TRUE)), ]
-    names(relabf) <- c("Genus", "Barcode", "Relative Abundance (%)")
+    names(relabf)[3] <- c("Relative Abundance (%)")
+    relab_meta <- names(relabf)[2]
+    } else {
+    # If metadata is present
+    adat <- dat[, c(10, 3, 12)]
+    adat <- adat %>% group_by(adat[1], adat[2], adat[3]) %>% tally()
+    adat <- adat[adat$n > 1, ]
+    relab <- data.frame()
+    for (i in bc) {
+      temp <- adat[adat$barcode == i, ]
+      temp$rel_ab <- temp$n / sum(temp$n)
+      relab <- rbind(relab, temp)
+    }
+    # Cleans table for presentation
+    relabf <- data.frame(relab$genus, relab$barcode, relab$id, relab$rel_ab)
+    names(relabf)[1:4] <- c("Genus", "Barcode", "ID", "rel_ab")
+    relabf$rel_ab <- relabf$rel_ab * 100
+    relabf <- relabf[with(relabf, order(Barcode, rel_ab, decreasing = TRUE)), ]
+    names(relabf)[4] <- c("Relative Abundance (%)")
+    relab_meta <- names(relabf)[2:3]
+    }
 
     # Update relative abundance table choices based on barcodes present in data
     updateSelectizeInput(session, "relab_barcode",
@@ -304,7 +326,7 @@ server <- function(input, output, session) {
       brayc <- brayc %>%
                group_by(brayc[1], brayc[2], brayc[3:ncol(brayc)]) %>%
                tally()
-      brayc <- brayc[brayc$n > 5, ]
+      brayc <- brayc[brayc$n > 1, ]
       brayc <- brayc %>% pivot_wider(names_from = species, values_from = n)
 
       # Replaces NA with 0
@@ -322,7 +344,7 @@ server <- function(input, output, session) {
     } else {
       brayc <- dat[, c("species", "barcode")]
       brayc <- brayc %>% group_by(species, barcode) %>% tally()
-      brayc <- brayc[brayc$n > 5, ]
+      brayc <- brayc[brayc$n > 1, ]
       brayc <- brayc %>% pivot_wider(names_from = species, values_from = n)
 
       # Replaces NA with 0
@@ -343,11 +365,11 @@ server <- function(input, output, session) {
     # Returns processed data
     if (exists("bray_curtis_pcoa_dat") == FALSE) {
       combo <- list(rdat = rdat, rare = rare, relab = relab,
-                    relabf = relabf)
+                    relabf = relabf, relab_meta = relab_meta)
       return(combo)
     } else {
       combo <- list(rdat = rdat, rare = rare, relab = relab,
-                    relabf = relabf,
+                    relabf = relabf, relab_meta = relab_meta,
                     bray_curtis_pcoa_dat = bray_curtis_pcoa_dat,
                     pcoa_meta = pcoa_meta)
       return(combo)
@@ -450,14 +472,21 @@ server <- function(input, output, session) {
     ))
   })
 
+  # Display relative abundance plot options
+  output$relab_meta <- renderUI({
+    selectInput("relab_meta",
+                "Select Metadata",
+                choices = data()$relab_meta)
+  })
+
   # Display the relative abundance plot
   output$relative_abundance <- renderPlotly({
-    ggplotly(ggplot(data = data()$relab, aes(x = barcode,
-                                     y = rel_ab,
-                                     fill = genus)) +
+    ggplotly(ggplot(data = data()$relabf, aes(x = .data[[input$relab_meta]],
+                                     y = `Relative Abundance (%)`,
+                                     fill = Genus)) +
     geom_bar(stat = "identity") +
     theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-    labs(x = "Sample ID", y = "Relative Abundance", fill = "Genus") +
+    labs(x = "Sample ID", y = "Relative Abundance (%)", fill = "Genus") +
     theme_bw())
   })
 
