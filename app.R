@@ -26,8 +26,7 @@ bci <- c("barcode01", "barcode02", "barcode03", "barcode04", "barcode05",
 
 # Define the UI ---------------------------------------------------------------
 ui <- shinyUI(fluidPage(
-  theme = bs_theme(bootswatch = "zephyr"),
-  titlePanel("EPI2MEviz"),
+  theme = bs_theme(bootswatch = "yeti"),
   navbarPage(
     title = "EPI2MEviz",
     tabPanel("Upload EPI2ME .csv",
@@ -73,7 +72,7 @@ ui <- shinyUI(fluidPage(
           textInput("filt", "Average EPI2ME Accuracy (1-99)",
             value = "80"),
           checkboxGroupInput("barcodes", HTML("Barcodes to Analyze"),
-            choices = bci, inline = FALSE),
+            choices = bci, inline = TRUE),
           actionButton("bar_help", "Help"),
           fileInput("metadata", "Choose Metadata File",
             accept = c("text/csv",
