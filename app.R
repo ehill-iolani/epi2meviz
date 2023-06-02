@@ -26,7 +26,7 @@ bci <- c("barcode01", "barcode02", "barcode03", "barcode04", "barcode05",
 
 # Define the UI ---------------------------------------------------------------
 ui <- shinyUI(fluidPage(
-  theme = bs_theme(bootswatch = "yeti"),
+  theme = bs_theme(bootswatch = "sandstone"),
   navbarPage(
     title = "EPI2MEviz",
     tabPanel("Upload EPI2ME .csv",
