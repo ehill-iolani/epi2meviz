@@ -42,3 +42,14 @@ docker run --name=epi2meviz --rm -d -p 3838:3838 epi2meviz:beta
 ```
 
 Open a browser and nativate to http://localhost:3838/ to use the application.
+
+# Running in a codespace
+
+Select the "Code" button in the upper right of the github repository and select "Open with Codespaces".
+When the codespace is ready, open a terminal and enter the following:
+```
+docker build -t epi2meviz:beta .
+docker run --name=epi2meviz --rm -d -p 3838:3838 epi2meviz:beta
+```
+
+Follow the pop-up link to open the app in a new browser window.
